@@ -116,7 +116,7 @@ public class Adapter implements Runnable {
             while (times++ < 10 && !client.getSessionState().isTransmittable()) {
                 try {
                     logger.warn("通道未连接 正在尝试重新链接。。重连次数 {}", times);
-                    client.connectAndBind(client.getAddress(), client.getPort(), new BindParameter(BindType.BIND_TX, client.getUsername(), client.getPassword(), "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
+                    client.connectAndBind(client.getAddress(), client.getPort(), new BindParameter(BindType.BIND_TX, client.getAccount(), client.getPassword(), "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
 
                     Thread.sleep(3000);
                 } catch (InterruptedException | IOException e) {

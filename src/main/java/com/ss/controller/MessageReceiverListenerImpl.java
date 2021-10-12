@@ -1,5 +1,8 @@
 package com.ss.controller;
 
+import com.ss.dao.ClientMapper;
+import com.ss.utils.MybatisUtils;
+import org.apache.ibatis.session.SqlSession;
 import org.jsmpp.SMPPConstant;
 import org.jsmpp.bean.*;
 import org.jsmpp.extra.ProcessRequestException;
@@ -18,6 +21,8 @@ import org.slf4j.LoggerFactory;
  */
 public class MessageReceiverListenerImpl implements MessageReceiverListener {
 
+    private SqlSession sqlSession;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageReceiverListenerImpl.class);
 
     private static final String DATA_SM_NOT_IMPLEMENTED = "data_sm not implemented";
@@ -33,7 +38,7 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
                 DeliveryReceiptState finalStatus = delReceipt.getFinalStatus();
                 String messageId = delReceipt.getId();
                 if (finalStatus == DeliveryReceiptState.DELIVRD) {
-
+                    updateSendInfo(messageId,finalStatus.value());
                 }else {
                     int value = finalStatus.value();
                 }
@@ -46,6 +51,12 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
                 LOGGER.error("Failed getting delivery receipt {}", e.getMessage());
             }
         }
+    }
+
+    private void updateSendInfo(String messageId, int value) {
+        sqlSession = MybatisUtils.getSqlSession();
+        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
+        mapper.updateMessage(messageId,String.valueOf(value));
     }
 
     public void onAcceptAlertNotification(AlertNotification alertNotification) {

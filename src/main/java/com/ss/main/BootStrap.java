@@ -1,7 +1,14 @@
 package com.ss.main;
 
 
+import com.ss.common.Container;
 import com.ss.controller.MessageReceiverListenerImpl;
+import com.ss.dao.ClientMapper;
+import com.ss.monitor.Adapter;
+import com.ss.pojo.Client;
+import com.ss.smpp.SMPPClient;
+import com.ss.utils.MybatisUtils;
+import org.apache.ibatis.session.SqlSession;
 import org.jsmpp.InvalidResponseException;
 import org.jsmpp.PDUException;
 import org.jsmpp.bean.*;
@@ -18,6 +25,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author JDsen99
@@ -25,111 +37,191 @@ import java.util.List;
  * @createDate 2021/10/12-17:00
  */
 public class BootStrap {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BootStrap.class);
 
-    private static final TimeFormatter TIME_FORMATTER = new AbsoluteTimeFormatter();
+    private final static Logger logger = LoggerFactory.getLogger(BootStrap.class);
 
-    private final String smppIp = "127.0.0.1";
+    private Container container = Container.getInstance();
 
-    private int port = 2776;
+    /**
+     * 最大通道数量
+     */
+    private final static Integer MAX_GATEWAY_NUM;
 
-    private final String username = "localhost";
+    /**
+     * 活跃通道数量
+     */
+    private static Integer MAX_ACTIVE_GATEWAY_NUM;
 
-    private final String password = "password";
+    /**
+     * 熔断标识
+     */
+    private boolean fusing = false;
 
-    private final String address = "AX-DEV";
+    private Adapter[] adapters = new Adapter[3];
 
-    private static final String SERVICE_TYPE = "CMT";
+    /**
+     * 线程池
+     */
+    private final ExecutorService executors = new ThreadPoolExecutor(MAX_ACTIVE_GATEWAY_NUM + 1,
+            MAX_GATEWAY_NUM + 1,
+            10,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(10));
 
-    public void broadcastMessage(String message, List numbers) {
-        LOGGER.info("Broadcasting sms");
-        SubmitMultiResult result = null;
-        Address[] addresses = prepareAddress(numbers);
-        SMPPSession session = initSession();
-        if(session != null) {
-            try {
-//                result = session.submitMultiple(SERVICE_TYPE, TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, address,
-//                        addresses, new ESMClass(), (byte) 0, (byte) 1, TIME_FORMATTER.format(new Date()), null,
-//                        new RegisteredDelivery(SMSCDeliveryReceipt.FAILURE), ReplaceIfPresentFlag.REPLACE,
-//                        new GeneralDataCoding(Alphabet.ALPHA_DEFAULT, MessageClass.CLASS1, false), (byte) 0,
-//                        message.getBytes());
-//                result = session.submitShortMessage(null,
-//                        TypeOfNumber.UNKNOWN,
-//                        NumberingPlanIndicator.UNKNOWN,
-//                        address,
-//                        TypeOfNumber.UNKNOWN,
-//                        NumberingPlanIndicator.UNKNOWN,
-//                        "123456789",
-//                        new ESMClass(),
-//                        0,
-//                        1,
-//                        null,
-//                        null,
-//                        new RegisteredDelivery(SMSCDeliveryReceipt.FAILURE)
-//                        0,
-//                        new DataCodingFactory00xx().newInstance((byte) 3),
-//                        0,
-//                        message.getBytes()
-//                        );
-                String messageId = session.submitShortMessage(SERVICE_TYPE,
-                        TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, address,
-                        TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, addresses[0].getAddress(),
-                        new ESMClass(), (byte)0, (byte)1,  TIME_FORMATTER.format(new Date()), null,
-                        new RegisteredDelivery(SMSCDeliveryReceipt.SUCCESS_FAILURE), (byte)0, new GeneralDataCoding(Alphabet.ALPHA_DEFAULT, MessageClass.CLASS1, false), (byte)0,
-                        message.getBytes());
+    private static SqlSession sqlSession = MybatisUtils.getSqlSession();
 
-                LOGGER.info("Messages submitted, result is {}", result);
-                Thread.sleep(1000);
-            } catch (PDUException e) {
-                LOGGER.error("Invalid PDU parameter", e);
-            } catch (ResponseTimeoutException e) {
-                LOGGER.error("Response timeout", e);
-            } catch (InvalidResponseException e) {
-                LOGGER.error("Receive invalid response", e);
-            } catch (NegativeResponseException e) {
-                LOGGER.error("Receive negative response", e);
-            } catch (IOException e) {
-                LOGGER.error("I/O error occured", e);
-            } catch (Exception e) {
-                LOGGER.error("Exception occured submitting SMPP request", e);
-            }
-        }else {
-            LOGGER.error("Session creation failed with SMPP broker.");
-        }
-        if(result != null && result.getUnsuccessDeliveries() != null && result.getUnsuccessDeliveries().length > 0) {
-//            LOGGER.error(DeliveryReceiptState.getDescription(result.getUnsuccessDeliveries()[0].getErrorStatusCode()).description() + " - " +result.getMessageId());
-        }else {
-            LOGGER.info("Pushed message to broker successfully");
-        }
-        if(session != null) {
-            session.unbindAndClose();
-        }
+    static {
+        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
+
+        MAX_GATEWAY_NUM = mapper.countClient();
+
+        MAX_ACTIVE_GATEWAY_NUM = mapper.countActiveClient();
     }
 
-    private Address[] prepareAddress(List<String> numbers) {
-        Address[] addresses = new Address[numbers.size()];
-        for(int i = 0; i< numbers.size(); i++){
-            addresses[i] = new Address(TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, numbers.get(i));
-        }
-        return addresses;
-    }
-
-    private SMPPSession initSession() {
-        SMPPSession session = new SMPPSession();
-        try {
-            session.setMessageReceiverListener(new MessageReceiverListenerImpl());
-            String systemId = session.connectAndBind(smppIp, port, new BindParameter(BindType.BIND_TX, username, password, "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
-            LOGGER.info("Connected with SMPP with system id {}", systemId);
-        } catch (IOException e) {
-            LOGGER.error("I/O error occured", e);
-            session = null;
-        }
-        return session;
-    }
 
     public static void main(String[] args) {
-        BootStrap multiSubmit = new BootStrap();
-        multiSubmit.broadcastMessage("Test message from devglan", Arrays.asList("9513059515", "8884377251"));
+        Scanner scanner = new Scanner(System.in);
+        BootStrap bootStrap = new BootStrap();
+        Container.getInstance().setBootStrap(bootStrap);
+        boolean flag = true;
+        System.out.println(" s: 启动 , e: 退出 , r 重启通道 , l 查看已存通道状态 \n 请输入：");
+        while (flag) {
+            String command = scanner.nextLine();
+            switch (command) {
+                case "s":
+                    bootStrap.init();
+                    bootStrap.start();
+                    break;
+                case "e":
+                    flag = false;
+                    bootStrap.close();
+                    break;
+                case "r":
+                    System.out.println("请输入通道ID 进行重启");
+                    int id = 0;
+                    try {
+                        id = scanner.nextInt();
+                    } catch (Exception e) {
+                        logger.warn("无效输入。。。{}", command);
+                    }
+                    if (id != 0) {
+                        reStartGateWay(id);
+                    }
+                    break;
+                case "l":
+                    bootStrap.showGateWayStatus();
+                    break;
+                default:
+                    logger.warn("无效输入。。。{}", command);
+                    break;
+            }
+        }
+        logger.info("scanner 已退出。。。主线程睡眠。。。请 X ");
+
+        try {
+            Thread.sleep(Integer.MAX_VALUE);
+        } catch (InterruptedException e) {
+        }
+    }
+
+    private void showGateWayStatus() {
+        container.showGateWayStatus();
+    }
+
+    private static void reStartGateWay(int id) {
+        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
+        Client client = mapper.getClientById(id);
+        if (client != null) {
+            if (client.getStatus() == 1) {
+                SMPPClient smppClient = packageClient(client);
+                smppClient.doConnect();
+                Container.getInstance().addClient(client.getId(), smppClient);
+            }
+        } else {
+            logger.warn("该通道不存在。。。id {}", id);
+        }
+    }
+
+    private void close() {
+        logger.info("线程开始关闭 。。。");
+        for (Adapter adapter : adapters) {
+            adapter.setRunning(false);
+        }
+        executors.shutdown();
+        logger.info("等待所有的状态报告中 。。。请自行关闭");
+    }
+
+    /**
+     * 初始化通道
+     */
+    private void init() {
+        logger.info("init gateWay config... gateWay max number : {}  active number : {}", MAX_GATEWAY_NUM, MAX_ACTIVE_GATEWAY_NUM);
+        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
+        List<Client> clientsList = mapper.listActiveClient();
+        for (int i = 0; i < clientsList.size(); i++) {
+            Client client = clientsList.get(i);
+            SMPPClient smppClient = packageClient(client);
+            container.addClient(client.getId(), smppClient);
+            System.out.println(client);
+        }
+    }
+
+    /**
+     * 启动
+     */
+    private void start() {
+        //启动客户端
+        container.clientStart();
+//        //启动线程
+        logger.info("测试。。。。。。。。。 短信发送线程启动。。。启动数量 3 大号码发生线程 2 ");
+        Adapter a1 = new Adapter();
+        Adapter a2 = new Adapter();
+        Adapter a3 = new Adapter();
+
+        a1.setLaunch(true);
+        a2.setLaunch(true);
+
+        adapters[0] = a1;
+        adapters[1] = a2;
+        adapters[2] = a3;
+
+        executors.execute(a1);
+        executors.execute(a2);
+        executors.execute(a3);
+    }
+
+    /**
+     * 封装SMPPClient
+     * @param client Client
+     * @return SMPPClient
+     */
+    private static SMPPClient packageClient(Client client) {
+        SMPPClient smppClient = new SMPPClient(client.getId());
+
+        if (client.getServerIP() == null || client.getServerIP().trim().length() == 0) {
+            smppClient.setServerAddr(client.getServerName().trim());
+        } else {
+            smppClient.setServerAddr(client.getServerIP().trim());
+        }
+
+        smppClient.setPort(client.getPort());
+        smppClient.setAccount(client.getUsername().trim());
+        smppClient.setPassword(client.getPassword().trim());
+        smppClient.setOpen(client.getStatus() == 1);
+        smppClient.setLimiter(client.getTps() * client.getThread());
+        if (client.getServerName() != null && client.getServerName().trim().length() != 0) {
+            smppClient.setServerName(client.getServerName().trim());
+        }
+        return smppClient;
+    }
+
+    /**
+     * 关闭发送线程
+     */
+    public void closeAdapter() {
+        for (Adapter adapter : adapters) {
+            adapter.setRunning(false);
+        }
     }
 
 }
