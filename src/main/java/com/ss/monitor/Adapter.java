@@ -8,12 +8,15 @@ import com.ss.utils.CommUtil;
 import com.ss.utils.MybatisUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.jsmpp.bean.Address;
+import org.jsmpp.bean.BindType;
 import org.jsmpp.bean.NumberingPlanIndicator;
 import org.jsmpp.bean.TypeOfNumber;
+import org.jsmpp.session.BindParameter;
 import org.jsmpp.session.SMPPSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,17 +79,16 @@ public class Adapter implements Runnable {
                         if (launch) {
                             List<Mobile> mobiles = getMobile(message.getId());
                             Address[] addresses = prepareAddress(mobiles);
-                            client.submitMultiple(message.getSendId(),addresses, CommUtil.getSmppCharsetInfo(message.getContent()),message.getContent());
+                            sendMessage(addresses,message,client);
                         } else {
                             //判断是否 为多号码
                             if (phone.contains(",")) {
-
                                 if (phone.endsWith(",")) phone = phone.substring(0, phone.length() - 1);
                                 String[] split = phone.split(",");
                                 Address[] addresses = prepareAddress(split);
-                                client.submitMultiple(message.getSendId(),addresses,CommUtil.getSmppCharsetInfo(message.getContent()),message.getContent());
+                                sendMessage(addresses,message,client);
                             } else {
-                                client.submitShortMessage(message.getSendId(),phone,(byte) 1, CommUtil.getSmppCharsetInfo(message.getContent()),message.getContent());
+                                sendMessage(message,client);
                             }
                         }
                     } else {
@@ -114,14 +116,14 @@ public class Adapter implements Runnable {
             while (times++ < 10 && !client.getSessionState().isTransmittable()) {
                 try {
                     logger.warn("通道未连接 正在尝试重新链接。。重连次数 {}", times);
-                    //TODO
+                    client.connectAndBind(client.getAddress(), client.getPort(), new BindParameter(BindType.BIND_TX, client.getUsername(), client.getPassword(), "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
+
                     Thread.sleep(3000);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException | IOException e) {
                     //do nothing
                 }
             }
-            //TODO
-            return false;
+            return client.getSessionState().isTransmittable();
         }
     }
 
@@ -199,23 +201,34 @@ public class Adapter implements Runnable {
      * @throws ExecutionException   异常
      * @throws InterruptedException 异常
      */
-    private void sendMessage(Message message, SMPPSession client) throws Exception {
-        String content = message.getContent();
-        String sendId = message.getSendId().trim();
+    private void sendMessage(Message message, SMPPClient client) throws Exception {
         String phone = message.getPhone();
-        MessageTask task = new MessageTask(phone, content, sendId, client);
+        MessageTask task = new MessageTask(phone,message, client);
+        executors.submit(task);
+    }
+
+    /**
+     * 发送短信
+     *
+     * @param message 短信
+     * @param client  客户端
+     * @throws ExecutionException   异常
+     * @throws InterruptedException 异常
+     */
+    private void sendMessage(Address[] address,Message message, SMPPClient client) throws Exception {
+        BigMessageTask task = new BigMessageTask(address,message, client);
     }
 
     /**
      * 将数据插入数据库 taskInfo
      *
      * @param message message
-     * @param integer integer
+     * @param messageId integer
      */
-    private void insertMessage(Message message, Integer integer) {
+    private void insertMessage(Message message, String messageId) {
         sqlSession = MybatisUtils.getSqlSession();
         ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
-        message.setMessageId(String.valueOf(integer));
+        message.setMessageId(messageId);
         mapper.insertMessage(message);
         sqlSession.close();
     }

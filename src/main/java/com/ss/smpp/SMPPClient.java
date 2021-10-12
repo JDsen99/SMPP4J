@@ -43,12 +43,12 @@ public class SMPPClient extends SMPPSession {
     /**
      * 服务器名称
      */
-    private String ServerName;
+    private String serverName;
 
     /**
      * 服务器地址
      */
-    private String ServerAddr;
+    private String serverAddr;
 
     /**
      * 发送的数量
@@ -103,12 +103,12 @@ public class SMPPClient extends SMPPSession {
         this.id = id;
     }
 
-    public String getServerName() {
-        return ServerName;
+    public String getAddress() {
+        return serverAddr;
     }
 
     public void setServerName(String serverName) {
-        ServerName = serverName;
+        serverName = serverName;
     }
 
     public AtomicInteger getSendCount() {
@@ -125,5 +125,41 @@ public class SMPPClient extends SMPPSession {
 
     public void setLimiter(RateLimiter limiter) {
         this.limiter = limiter;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public boolean isOpen() {
+        return isOpen;
+    }
+
+    public void setOpen(boolean open) {
+        isOpen = open;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public String getServerName() {
+        return serverName;
     }
 }
