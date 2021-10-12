@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ss.dao.ClientMapper">
+    <select id="listAllClient" resultType="com.ss.pojo.Client">
+        select ID as id,
+               ServerIP as serverIp,
+               ServerName as serverName,
+               ServerPort as port,
+               UserName as username,
+               UserPwd as password,
+               bEnabled as status,
+               tps as tps
+        from smppInfo;
+    </select>
+
+    <select id="listActiveClient" resultType="com.ss.pojo.Client">
+        select ID as id,
+               ServerIP as serverIp,
+               ServerName as serverName,
+               ServerPort as port,
+               UserName as username,
+               UserPwd as password,
+               bEnabled as status,
+               Tps as tps,
+               Thread as thread
+        from smppInfo where bEnabled = 1;
+    </select>
+
+    <select id="countClient" resultType="int" >
+        select count(*) from smppInfo;
+    </select>
+
+    <select id="countActiveClient" resultType="int" >
+        select count(*) from smppInfo where bEnabled = 1;
+    </select>
+
+    <select id="listUnDeliverMessage" resultType="com.ss.pojo.Message" >
+        select top 1000
+               ID as id,
+               SendID as sendId,
+               SendMobile as phone,
+               SendContent as content,
+               smppID as taskId,
+               bProcess as status,
+               SendCount as sendCount
+        from TaskInfo where bProcess = 0 and SendCount !> 200;
+    </select>
+
+    <select id="listBigUnDeliverMessage" resultType="com.ss.pojo.Message">
+        select top 50
+               ID as id,
+               SendID as sendId,
+               SendMobile as phone,
+               SendContent as content,
+               smppID as taskId,
+               bProcess as status,
+               SendCount as sendCount
+        from TaskInfo where bProcess = 0 and SendCount > 200;
+    </select>
+
+    <select id="listMobile" resultType="com.ss.pojo.Mobile">
+        select ID as id,
+               TaskID as taskId,
+               SendMobile as phone,
+               bProcess as status
+        from MobileInfo where bProcess = 0 and TaskID = #{taskId};
+    </select>
+
+    <update id="updateMessageStatus" >
+        update TaskInfo set bProcess=#{status},Sendtime=getdate() where ID = #{id};
+    </update>
+
+    <insert id="insertMessage" parameterType="com.ss.pojo.Message">
+        insert into SendInfo(TaskID,SendMobile,MessageID,SendStatus,errorCode)
+        values(#{id},#{phone},#{messageId},#{text},#{status});
+    </insert>
+
+    <update id="updateMessage">
+        update SendInfo set SendStatus = #{status} where messageId = #{messageId};
+    </update>
+    <update id="rollBackBigMessage">
+        update TaskInfo set bProcess=#{status},ProcessCount = #{index},Sendtime=getdate() where ID = #{id};
+    </update>
+    <update id="updateSendInfo">
+        update SendInfo set MessageID = #{messageId} , errorCode = #{status} where MessageID = #{seqNo};
+    </update>
+
+    <update id="updateBigMessageStatus">
+-- TODO
+    </update>
+
+    <update id="updateMobileStatus">
+        update MobileInfo set bProcess=#{status} where ID = #{id};
+    </update>
+
+    <select id="getClientById" resultType="client">
+        select ID as id,
+               ServerIP as serverIp,
+               ServerName as serverName,
+               ServerPort as port,
+               UserName as username,
+               UserPwd as password,
+               bEnabled as status
+        from smppInfo where ID = #{id};
+    </select>
+
+</mapper>
