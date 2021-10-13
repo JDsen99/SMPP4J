@@ -1,7 +1,9 @@
 package com.ss.utils;
 
+import org.jsmpp.bean.Alphabet;
 import org.jsmpp.bean.DataCoding;
 import org.jsmpp.bean.GeneralDataCoding;
+import org.jsmpp.bean.MessageClass;
 
 import java.nio.charset.StandardCharsets;
 
@@ -14,13 +16,13 @@ public class CommUtil {
     /**
      * SMPP短信内容字符集判断
      *
-     * @param content
-     * @return
+     * @param content content
+     * @return DataCoding
      */
     public static DataCoding getSmppCharsetInfo(String content) {
-        DataCoding ret = new GeneralDataCoding();
+        DataCoding ret = new GeneralDataCoding(Alphabet.ALPHA_UCS2, MessageClass.CLASS1, false);
         if (CommUtil.checkLatinCharset(content)) {
-
+            ret = new GeneralDataCoding(Alphabet.ALPHA_LATIN1, MessageClass.CLASS1, false);
         }
         return ret;
     }
@@ -39,7 +41,7 @@ public class CommUtil {
                 }
             }
             return true;
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         return false;
     }

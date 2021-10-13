@@ -14,6 +14,8 @@ import org.jsmpp.util.InvalidDeliveryReceiptException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
+
 /**
  * @author JDsen99
  * @description
@@ -37,10 +39,17 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
                 DeliveryReceipt delReceipt = deliverSm.getShortMessageAsDeliveryReceipt();
                 DeliveryReceiptState finalStatus = delReceipt.getFinalStatus();
                 String messageId = delReceipt.getId();
+                LOGGER.info("messageId : {} ",messageId);
+                LOGGER.info("finalStatus : {} ",finalStatus);
+                LOGGER.info("getDelivered : {} ",delReceipt.getDelivered());
+                LOGGER.info("getError : {} ",delReceipt.getError());
+                LOGGER.info("getSubmitted : {} ",delReceipt.getSubmitted());
+
                 if (finalStatus == DeliveryReceiptState.DELIVRD) {
                     updateSendInfo(messageId,finalStatus.value());
                 }else {
                     int value = finalStatus.value();
+                    System.out.println(value);
                 }
 //                long id = Long.parseLong(delReceipt.getId()) & 0xffffffff;
 //                String messageId = Long.toString(id, 16).toUpperCase();
@@ -51,12 +60,15 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
                 LOGGER.error("Failed getting delivery receipt {}", e.getMessage());
             }
         }
+        LOGGER.info("Receiving delivery receipt for message '{}' from {} to {}",
+                deliverSm.getId(), deliverSm.getSourceAddr(), deliverSm.getDestAddress());
     }
 
     private void updateSendInfo(String messageId, int value) {
         sqlSession = MybatisUtils.getSqlSession();
         ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
         mapper.updateMessage(messageId,String.valueOf(value));
+        sqlSession.close();
     }
 
     public void onAcceptAlertNotification(AlertNotification alertNotification) {

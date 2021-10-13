@@ -3,6 +3,7 @@ package com.ss.monitor;
 import com.ss.common.ClientConstant;
 import com.ss.dao.ClientMapper;
 import com.ss.pojo.Message;
+import com.ss.smpp.SMPPClient;
 import com.ss.utils.CommUtil;
 import com.ss.utils.MybatisUtils;
 import org.apache.ibatis.session.SqlSession;
@@ -28,30 +29,23 @@ public class MessageTask implements Runnable {
 
     private SqlSession sqlSession;
 
-    Logger logger = LoggerFactory.getLogger(BigMessageTask.class);
-
-    private String phone;
+    Logger logger = LoggerFactory.getLogger(MessageTask.class);
     private Message message;
-    private SMPPSession session;
+    private SMPPClient client;
 
-    public MessageTask(String phone, Message message, SMPPSession session) {
-        this.phone = phone;
+    public MessageTask(Message message, SMPPClient client) {
         this.message = message;
-        this.session = session;
+        this.client = client;
     }
 
 
     @Override
     public void run() {
         try {
-            String messageId = session.submitShortMessage(ClientConstant.SERVICE_TYPE,
-                    TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, message.getSendId().trim(),
-                    TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, phone,
-                    new ESMClass(), (byte)0, (byte)1,  ClientConstant.TIME_FORMATTER.format(new Date()), null,
-                    new RegisteredDelivery(SMSCDeliveryReceipt.SUCCESS_FAILURE), (byte)0, CommUtil.getSmppCharsetInfo(message.getContent()), (byte)0,
-                    message.getContent().getBytes());
+            String messageId = client.submitShortMessage(message.getSendId().trim(),message.getPhone(),(byte) 1,CommUtil.getSmppCharsetInfo(message.getContent()),message.getContent());
+            logger.info("messageId : {}",messageId);
             insertMessage(message,messageId);
-        } catch (PDUException | ResponseTimeoutException | InvalidResponseException | NegativeResponseException | IOException e) {
+        } catch (Exception e) {
             logger.error("短信发送错误 Id :{} gateWay ID : {}  {}",message.getId(),message.getTaskId(),e.getMessage());
         }
     }

@@ -96,6 +96,7 @@ public class Adapter implements Runnable {
                         updateMessage(message.getId(), 3);
                     }
                 } catch (Exception e) {
+                    e.printStackTrace();
                     updateMessage(message.getId(), 4);
                 }
             }
@@ -111,16 +112,17 @@ public class Adapter implements Runnable {
      * @return boolean
      */
     private boolean checkClient(SMPPClient client) {
+        if (client == null) return false;
         synchronized (client) {
             int times = 0;
             while (times++ < 10 && !client.getSessionState().isTransmittable()) {
                 try {
                     logger.warn("通道未连接 正在尝试重新链接。。重连次数 {}", times);
-                    client.connectAndBind(client.getAddress(), client.getPort(), new BindParameter(BindType.BIND_TX, client.getAccount(), client.getPassword(), "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
-
+                    System.out.println(client);
+                    client.doConnect();
                     Thread.sleep(3000);
-                } catch (InterruptedException | IOException e) {
-                    //do nothing
+                } catch (InterruptedException e) {
+                    throw new RuntimeException();
                 }
             }
             return client.getSessionState().isTransmittable();
@@ -202,8 +204,8 @@ public class Adapter implements Runnable {
      * @throws InterruptedException 异常
      */
     private void sendMessage(Message message, SMPPClient client) throws Exception {
-        String phone = message.getPhone();
-        MessageTask task = new MessageTask(phone,message, client);
+        logger.info("send message ... : {}" ,message);
+        MessageTask task = new MessageTask(message, client);
         executors.submit(task);
     }
 

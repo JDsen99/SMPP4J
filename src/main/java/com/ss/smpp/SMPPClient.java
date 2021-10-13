@@ -69,17 +69,19 @@ public class SMPPClient extends SMPPSession {
 
 
     public SMPPClient(int id) {
+        super();
         this.id = id;
     }
+
 
     public String submitShortMessage(String sendId,String phone, byte priorityFlag,DataCoding dataCoding, String content) {
         String result = null;
         try {
-            result = super.submitShortMessage(ClientConstant.SERVICE_TYPE,
+            result = submitShortMessage(ClientConstant.SERVICE_TYPE,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, sendId,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, phone,
                     new ESMClass(), (byte) 0, priorityFlag, ClientConstant.TIME_FORMATTER.format(new Date()), null,
-                    new RegisteredDelivery(SMSCDeliveryReceipt.SUCCESS_FAILURE), (byte) 0, dataCoding, (byte) 0,
+                    new RegisteredDelivery(SMSCDeliveryReceipt.FAILURE), (byte) 0, dataCoding, (byte) 0,
                     content.getBytes());
         } catch (PDUException | ResponseTimeoutException | InvalidResponseException | NegativeResponseException | IOException e) {
             e.printStackTrace();
@@ -92,7 +94,7 @@ public class SMPPClient extends SMPPSession {
         try {
             submitMultiResult = submitMultiple(ClientConstant.SERVICE_TYPE, TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, sendId,
                     addresses, new ESMClass(), (byte) 0, (byte) 1, ClientConstant.TIME_FORMATTER.format(new Date()), null,
-                    new RegisteredDelivery(SMSCDeliveryReceipt.FAILURE), ReplaceIfPresentFlag.REPLACE,
+                    new RegisteredDelivery(SMSCDeliveryReceipt.SUCCESS_FAILURE), ReplaceIfPresentFlag.REPLACE,
                     dataCoding, (byte) 0,
                     content.getBytes());
         } catch (PDUException | ResponseTimeoutException | InvalidResponseException | NegativeResponseException | IOException e) {
@@ -103,9 +105,9 @@ public class SMPPClient extends SMPPSession {
 
     public void doConnect() {
         try {
-            super.connectAndBind(serverAddr,port,new BindParameter(BindType.BIND_TX, account, password, "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
+            connectAndBind(serverAddr,port,new BindParameter(BindType.BIND_TX, account, password, "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
         } catch (IOException e) {
-            logger.warn("通道启动错误... ID : {}",id);
+            logger.warn("通道启动错误... ID : {}  {}",id,e.getMessage());
         }
     }
     public void showStatus() {
@@ -187,5 +189,17 @@ public class SMPPClient extends SMPPSession {
     }
 
 
-
+    @Override
+    public String toString() {
+        return "SMPPClient{" +
+                "id=" + id +
+                ", account='" + account + '\'' +
+                ", password='" + password + '\'' +
+                ", isOpen=" + isOpen +
+                ", port=" + port +
+                ", serverName='" + serverName + '\'' +
+                ", serverAddr='" + serverAddr + '\'' +
+                ", sendCount=" + sendCount +
+                '}';
+    }
 }
