@@ -66,8 +66,6 @@ public class Adapter implements Runnable {
                     //验证通道状态
                     if (checkClient(client)) {
                         String phone = message.getPhone();
-
-
                         //判断是否为大短信
                         if (launch) {
                             List<Mobile> mobiles = getMobile(message.getId());
@@ -94,10 +92,11 @@ public class Adapter implements Runnable {
                             }
                         }
                     } else {
+                        updateMessage(message.getId(), 2);
                         logger.error("通道错误，重新链接失败。。。。clientId {} phone id : {}", client.getId(),message.getId());
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("发送失败。。。。clientId {} phone id : {}", client.getId(),message.getId());
                 }
             }
         }
@@ -197,10 +196,12 @@ public class Adapter implements Runnable {
      * @param client  客户端
      */
     private void sendMessage(Message message, SMPPClient client){
-        client.getLimiter().acquire();
+        synchronized (client) {
+            client.getLimiter().acquire();
 //        logger.info("send message ... : {} id {} phone {}" ,message,message.getId(),message.getPhone());
-        MessageTask task = new MessageTask(message, client);
-        executors.submit(task);
+            MessageTask task = new MessageTask(message, client);
+            executors.submit(task);
+        }
     }
 
     /**
