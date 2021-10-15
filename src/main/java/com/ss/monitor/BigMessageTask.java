@@ -57,17 +57,20 @@ public class BigMessageTask implements Runnable{
                     ReplaceIfPresentFlag.REPLACE,
                     CommUtil.getSmppCharsetInfo(message.getContent()), (byte) 0,
                     message.getContent().getBytes());
-            UnsuccessDelivery[] unsuccessDeliveries = result.getUnsuccessDeliveries();
+            UnsuccessDelivery[] unSuccessDeliveries = result.getUnsuccessDeliveries();
+            String messageId = result.getMessageId();
             StringBuffer sb  = new StringBuffer();
+
             if (result.getUnsuccessDeliveries() != null && result.getUnsuccessDeliveries().length > 0) {
-                for (UnsuccessDelivery unsuccessDelivery : unsuccessDeliveries) {
+                for (UnsuccessDelivery unsuccessDelivery : unSuccessDeliveries) {
                     Address address = unsuccessDelivery.getDestinationAddress();
                     sb.append(address.getAddress()).append(",");
                 }
-                message.setText(sb.toString());
+//                message.setText(sb.toString());
             }
-            String messageId = result.getMessageId();
-            insertMessage(message,messageId);
+            logger.info("大短信发送成功数量 : {} 未发送号码 : {} , messageId : {}",unSuccessDeliveries.length,sb,messageId);
+//            String messageId = result.getMessageId();
+//            insertMessage(message,messageId);
         } catch (PDUException | ResponseTimeoutException | InvalidResponseException | NegativeResponseException | IOException e) {
             logger.error("大短信发送错误 Id :{} gateWay ID : {}  {}",message.getId(),message.getTaskId(),e.getMessage());
         }
