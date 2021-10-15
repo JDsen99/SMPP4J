@@ -47,9 +47,17 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
 
 
     private void updateSendInfo(DeliveryReceipt delReceipt) {
+        if (delReceipt == null) {
+            LOGGER.error("状态报告 接受错误。。。 没有delReceipt对象");
+        }
         sqlSession = MybatisUtils.getSqlSession();
         ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
-        mapper.updateSendInfo(delReceipt.getFinalStatus().toString(),delReceipt.getError(),delReceipt.getId());
+        if (delReceipt.getFinalStatus() == null) {
+            mapper.updateSendInfo("NULL",delReceipt.getError(),delReceipt.getId());
+        }else {
+            mapper.updateSendInfo(delReceipt.getFinalStatus().toString(),delReceipt.getError(),delReceipt.getId());
+        }
+
         sqlSession.close();
     }
 
