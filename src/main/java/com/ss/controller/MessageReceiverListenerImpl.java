@@ -3,7 +3,6 @@ package com.ss.controller;
 import com.ss.dao.ClientMapper;
 import com.ss.utils.MybatisUtils;
 import org.apache.ibatis.session.SqlSession;
-import org.jsmpp.SMPPConstant;
 import org.jsmpp.bean.*;
 import org.jsmpp.extra.ProcessRequestException;
 import org.jsmpp.session.DataSmResult;
@@ -13,8 +12,6 @@ import org.jsmpp.util.DeliveryReceiptState;
 import org.jsmpp.util.InvalidDeliveryReceiptException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
 
 /**
  * @author JDsen99
@@ -27,9 +24,6 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageReceiverListenerImpl.class);
 
-    private static final String DATA_SM_NOT_IMPLEMENTED = "data_sm not implemented";
-
-
 
     public void onAcceptDeliverSm(DeliverSm deliverSm) throws ProcessRequestException {
 
@@ -37,37 +31,25 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
 
             try {
                 DeliveryReceipt delReceipt = deliverSm.getShortMessageAsDeliveryReceipt();
-                DeliveryReceiptState finalStatus = delReceipt.getFinalStatus();
-                String messageId = delReceipt.getId();
-                LOGGER.info("messageId : {} ",messageId);
-                LOGGER.info("finalStatus : {} ",finalStatus);
-                LOGGER.info("getDelivered : {} ",delReceipt.getDelivered());
-                LOGGER.info("getError : {} ",delReceipt.getError());
-                LOGGER.info("getSubmitted : {} ",delReceipt.getSubmitted());
-
-                if (finalStatus == DeliveryReceiptState.DELIVRD) {
-                    updateSendInfo(messageId,finalStatus.value());
-                }else {
-                    int value = finalStatus.value();
-                    System.out.println(value);
-                }
-//                long id = Long.parseLong(delReceipt.getId()) & 0xffffffff;
-//                String messageId = Long.toString(id, 16).toUpperCase();
-
-                LOGGER.info("Receiving delivery receipt for message '{}' from {} to {}: {}",
-                        messageId, deliverSm.getSourceAddr(), deliverSm.getDestAddress(), delReceipt);
+                updateSendInfo(delReceipt);
             } catch (InvalidDeliveryReceiptException e) {
-                LOGGER.error("Failed getting delivery receipt {}", e.getMessage());
+                LOGGER.error("状态报告 接受错误。。。 {}", e.getMessage());
             }
         }
-        LOGGER.info("Receiving delivery receipt for message '{}' from {} to {}",
-                deliverSm.getId(), deliverSm.getSourceAddr(), deliverSm.getDestAddress());
+
+//        try {
+//            LOGGER.info("Receiving delivery receipt for message '{}' {}",
+//                    deliverSm.getId(), deliverSm.getShortMessageAsDeliveryReceipt());
+//        } catch (InvalidDeliveryReceiptException e) {
+//            e.printStackTrace();
+//        }
     }
 
-    private void updateSendInfo(String messageId, int value) {
+
+    private void updateSendInfo(DeliveryReceipt delReceipt) {
         sqlSession = MybatisUtils.getSqlSession();
         ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
-        mapper.updateMessage(messageId,String.valueOf(value));
+        mapper.updateSendInfo(delReceipt.getFinalStatus().toString(),delReceipt.getError(),delReceipt.getId());
         sqlSession.close();
     }
 
@@ -79,6 +61,7 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
             throws ProcessRequestException {
 //        LOGGER.info("DataSm not implemented");
 //        throw new ProcessRequestException(DATA_SM_NOT_IMPLEMENTED, SMPPConstant.STAT_ESME_RINVCMDID);
+        LOGGER.info("onAcceptDataSm....");
         return null;
     }
 }

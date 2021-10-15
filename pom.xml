@@ -35,11 +35,12 @@
             <artifactId>mybatis</artifactId>
             <version>3.5.6</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-smpp</artifactId>
-            <version>3.11.1</version>
-        </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>org.apache.camel</groupId>-->
+<!--            <artifactId>camel-smpp</artifactId>-->
+<!--            <version>3.11.1</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.slf4j</groupId>

@@ -9,6 +9,8 @@ import org.jsmpp.extra.NegativeResponseException;
 import org.jsmpp.extra.ResponseTimeoutException;
 import org.jsmpp.session.BindParameter;
 import org.jsmpp.session.SMPPSession;
+import org.jsmpp.session.SubmitMultiResult;
+import org.jsmpp.session.SubmitSmResult;
 import org.jsmpp.util.AbsoluteTimeFormatter;
 import org.jsmpp.util.TimeFormatter;
 import org.slf4j.Logger;
@@ -106,7 +108,7 @@ public class TestSend {
     private void sendMessage(SMPPSession session , String number, String message) {
 
         try {
-            String messageId = session.submitShortMessage(SERVICE_TYPE,
+            SubmitSmResult messageId = session.submitShortMessage(SERVICE_TYPE,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, address,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, number,
                     new ESMClass(), (byte)0, (byte)1,  TIME_FORMATTER.format(new Date()), null,

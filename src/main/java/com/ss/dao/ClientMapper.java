@@ -68,13 +68,13 @@ public interface ClientMapper {
 
     void insertMessage(Message message);
 
-    void updateMessage(@Param("messageId") String messageId ,@Param("status") String status);
-
     Client getClientById(int id);
 
     void rollBackBigMessage(@Param("status") int status, @Param("index") String index,@Param("id") int messageId);
 
-    void updateSendInfo(@Param("status") int status, @Param("seqNo") String seqNo, @Param("messageId") String messageId);
+    void updateSendInfo(@Param("status") String status,@Param("errorCode") String errorCode, @Param("messageId") String messageId);
 
     void updateBigMessageStatus(@Param("id") int id,@Param("status") int status);
+
+    int getTaskIdByMessageID(@Param("messageId") String messageId);
 }

@@ -14,9 +14,7 @@ import org.slf4j.LoggerFactory;
  * @description
  * @createDate 2021/10/12-18:27
  */
-public class MessageTask implements Runnable {
-
-    private SqlSession sqlSession;
+public class MessageTask extends AbstractMessageTask {
 
     Logger logger = LoggerFactory.getLogger(MessageTask.class);
     private Message message;
@@ -31,25 +29,16 @@ public class MessageTask implements Runnable {
     @Override
     public void run() {
         try {
-            String messageId = client.submitShortMessage(message.getSendId().trim(),message.getPhone(),(byte) 1,CommUtil.getSmppCharsetInfo(message.getContent()),message.getContent());
-            logger.info("messageId : {}",messageId);
-            insertMessage(message,messageId);
+            if (checkPhone(message.getPhone())) {
+                String messageId = client.submitShortMessage(message.getSendId().trim(),message.getPhone(),(byte) 1,CommUtil.getSmppCharsetInfo(message.getContent()),message.getContent());
+                insertMessage(message,messageId);
+            }else {
+                logger.error("中国短信 拒绝发送 。。。 Id :{} ",message.getId());
+            }
         } catch (Exception e) {
-            logger.error("短信发送错误 Id :{} gateWay ID : {}  {}",message.getId(),message.getTaskId(),e.getMessage());
+            logger.error("短信发送错误 phone Id :{}  gateWay ID : {}  {}",message.getId(),message.getTaskId(),e.getMessage());
         }
     }
 
-    /**
-     * 将数据插入数据库 taskInfo
-     *
-     * @param message message
-     * @param messageId integer
-     */
-    private void insertMessage(Message message, String messageId) {
-        sqlSession = MybatisUtils.getSqlSession();
-        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
-        message.setMessageId(messageId);
-        mapper.insertMessage(message);
-        sqlSession.close();
-    }
+
 }

@@ -11,8 +11,9 @@ import org.jsmpp.PDUException;
 import org.jsmpp.bean.*;
 import org.jsmpp.extra.NegativeResponseException;
 import org.jsmpp.extra.ResponseTimeoutException;
-import org.jsmpp.session.BindParameter;
 import org.jsmpp.session.SMPPSession;
+import org.jsmpp.session.SubmitMultiResult;
+import org.jsmpp.session.SubmitSmResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,8 +77,8 @@ public class SMPPClient extends SMPPSession {
     }
 
 
-    public String submitShortMessage(String sendId,String phone, byte priorityFlag,DataCoding dataCoding, String content) {
-        String result = null;
+    public String submitShortMessage(String sendId, String phone, byte priorityFlag, DataCoding dataCoding, String content) {
+        SubmitSmResult result = null;
         try {
             result = submitShortMessage(ClientConstant.SERVICE_TYPE,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, sendId,
@@ -88,10 +89,11 @@ public class SMPPClient extends SMPPSession {
         } catch (PDUException | ResponseTimeoutException | InvalidResponseException | NegativeResponseException | IOException e) {
             e.printStackTrace();
         }
-        return result;
+        assert result != null;
+        return result.getMessageId();
     }
 
-    public SubmitMultiResult submitMultiple(String sendId,Address[] addresses ,DataCoding dataCoding ,String content){
+    public SubmitMultiResult submitMultiple(String sendId, Address[] addresses , DataCoding dataCoding , String content){
         SubmitMultiResult submitMultiResult = null;
         try {
             submitMultiResult = submitMultiple(ClientConstant.SERVICE_TYPE, TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, sendId,
@@ -107,7 +109,8 @@ public class SMPPClient extends SMPPSession {
 
     public void doConnect() {
         try {
-            connectAndBind(serverAddr,port,new BindParameter(BindType.BIND_TRX, account, password, "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
+//            connectAndBind(serverAddr,port,new BindParameter(BindType.BIND_TRX, account, password, "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
+            connectAndBind(serverAddr,port,BindType.BIND_TRX, account, password.trim(), "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null);
         } catch (IOException e) {
             logger.warn("通道启动错误... ID : {}  {}",id,e.getMessage());
         }

@@ -77,14 +77,11 @@
         values(#{id},#{phone},#{messageId},#{text},#{status});
     </insert>
 
-    <update id="updateMessage">
-        update SendInfo set SendStatus = #{status} where messageId = #{messageId};
+    <update id="updateSendInfo">
+        update SendInfo set SendStatus = #{status} ,errorCode = #{errorCode} where messageId = #{messageId};
     </update>
     <update id="rollBackBigMessage">
         update TaskInfo set bProcess=#{status},ProcessCount = #{index},Sendtime=getdate() where ID = #{id};
-    </update>
-    <update id="updateSendInfo">
-        update SendInfo set MessageID = #{messageId} , errorCode = #{status} where MessageID = #{seqNo};
     </update>
 
     <update id="updateBigMessageStatus">
@@ -104,6 +101,9 @@
                UserPwd as password,
                bEnabled as status
         from smppInfo where ID = #{id};
+    </select>
+    <select id="getTaskIdByMessageID" resultType="java.lang.Integer">
+        select TaskID from SendInfo where MessageID = #{messageId};
     </select>
 
 </mapper>

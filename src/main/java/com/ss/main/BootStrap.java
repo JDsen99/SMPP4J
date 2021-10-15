@@ -50,8 +50,8 @@ public class BootStrap {
     /**
      * 线程池
      */
-    private final ExecutorService executors = new ThreadPoolExecutor(MAX_ACTIVE_GATEWAY_NUM + 1,
-            MAX_GATEWAY_NUM + 1,
+    private final ExecutorService executors = new ThreadPoolExecutor(MAX_ACTIVE_GATEWAY_NUM + 2,
+            MAX_GATEWAY_NUM + 2,
             10,
             TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(10));
@@ -163,19 +163,19 @@ public class BootStrap {
 //        //启动线程
         logger.info("测试。。。。。。。。。 短信发送线程启动。。。启动数量 3 大号码发生线程 2 ");
         Adapter a1 = new Adapter();
-//        Adapter a2 = new Adapter();
-//        Adapter a3 = new Adapter();
+        Adapter a2 = new Adapter();
+        Adapter a3 = new Adapter();
 
-//        a1.setLaunch(true);
-//        a2.setLaunch(true);
+        a1.setLaunch(true);
+        a2.setLaunch(true);
 
-//        adapters[0] = a1;
-//        adapters[1] = a2;
-//        adapters[2] = a3;
+        adapters[0] = a1;
+        adapters[1] = a2;
+        adapters[2] = a3;
 
         executors.execute(a1);
-//        executors.execute(a2);
-//        executors.execute(a3);
+        executors.execute(a2);
+        executors.execute(a3);
     }
 
     /**

@@ -59,36 +59,45 @@ public class Adapter implements Runnable {
                 continue;
             }
             times++;
-            logger.info("开始发送短信。。。此次记录总量：{}  threadName : {}", preData.size(), Thread.currentThread().getName());
+            logger.warn("开始发送短信。。。此次记录总量：{}  threadName : {}", preData.size(), Thread.currentThread().getName());
             for (Message message : preData) {
                 SMPPClient client = container.getClient(message.getTaskId());
                 try {
                     //验证通道状态
                     if (checkClient(client)) {
                         String phone = message.getPhone();
+
+
                         //判断是否为大短信
                         if (launch) {
                             List<Mobile> mobiles = getMobile(message.getId());
-                            Address[] addresses = prepareAddress(mobiles);
-                            sendMessage(addresses,message,client);
+                            for (Mobile mobile : mobiles) {
+                                Message msg = (Message) message.clone();
+                                msg.setPhone(mobile.getPhone());
+                                sendMessage(msg,client);
+                            }
+                            updateMessage(message.getId(), 2);
                         } else {
                             //判断是否 为多号码
                             if (phone.contains(",")) {
                                 if (phone.endsWith(",")) phone = phone.substring(0, phone.length() - 1);
                                 String[] split = phone.split(",");
-                                Address[] addresses = prepareAddress(split);
-                                sendMessage(addresses,message,client);
+                                for (String str : split) {
+                                    Message msg = (Message) message.clone();
+                                    msg.setPhone(str);
+                                    sendMessage(msg,client);
+                                }
+                                updateMessage(message.getId(), 2);
                             } else {
                                 sendMessage(message,client);
+                                updateMessage(message.getId(), 2);
                             }
                         }
                     } else {
-                        logger.warn("通道错误，重新链接失败。。记录已回写。。id {}", client.getId());
-                        updateMessage(message.getId(), 3);
+                        logger.error("通道错误，重新链接失败。。。。clientId {} phone id : {}", client.getId(),message.getId());
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    updateMessage(message.getId(), 4);
                 }
             }
         }
@@ -179,7 +188,6 @@ public class Adapter implements Runnable {
         ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
         mapper.updateMessageStatus(id, status);
         sqlSession.close();
-        logger.warn("发送短信过程中出错。。。 数据已写回  threadName : {}", Thread.currentThread().getName());
     }
 
     /**
@@ -189,7 +197,8 @@ public class Adapter implements Runnable {
      * @param client  客户端
      */
     private void sendMessage(Message message, SMPPClient client){
-        logger.info("send message ... : {} id {} phone {}" ,message,message.getId(),message.getPhone());
+        client.getLimiter().acquire();
+//        logger.info("send message ... : {} id {} phone {}" ,message,message.getId(),message.getPhone());
         MessageTask task = new MessageTask(message, client);
         executors.submit(task);
     }
@@ -202,6 +211,7 @@ public class Adapter implements Runnable {
      * @throws ExecutionException   异常
      * @throws InterruptedException 异常
      */
+    @Deprecated
     private void sendMessage(Address[] address,Message message, SMPPClient client) throws Exception {
         BigMessageTask task = new BigMessageTask(address,message, client);
         executors.submit(task);
@@ -221,44 +231,35 @@ public class Adapter implements Runnable {
         sqlSession.close();
     }
 
-    /**
-     * 封装号码到 Address
-     * @param numbers phone
-     * @return Address
-     */
-    private  Address[] prepareAddress(List<Mobile> numbers) {
-        List<Address> addresses = new ArrayList<>();
-        for (Mobile number : numbers) {
-            if (checkPhone(number.getPhone())) addresses.add(new Address(TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, number.getPhone()));
-        }
-        return (Address[]) addresses.toArray();
-    }
+//    /**
+//     * 封装号码到 Address
+//     * @param numbers phone
+//     * @return Address
+//     */
+//    private  Address[] prepareAddress(List<Mobile> numbers) {
+//        List<Address> addresses = new ArrayList<>();
+//        for (Mobile number : numbers) {
+//            if (checkPhone(number.getPhone())) addresses.add(new Address(TypeOfNumber.INTERNATIONAL, NumberingPlanIndicator.UNKNOWN, number.getPhone()));
+//        }
+//        return addresses.toArray(new Address[0]);
+//    }
 
-    /**
-     * 封装号码到 Address
-     * @return Address
-     */
-    private boolean checkPhone(String phone) {
-        if (phone.startsWith("86")) {
-            logger.error("中国短信 {} 拒绝发送...", phone);
-            return false;
-        }
-        return true;
-    }
 
-    /**
-     * 封装号码到 Address
-     * @param numbers phone
-     * @return Address
-     */
-    private Address[] prepareAddress(String[] numbers) {
-        List<Address> addresses = new ArrayList<>();
-        for (String number : numbers) {
-            if (checkPhone(number))
-                addresses.add(new Address(TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, number));
-        }
-        return (Address[]) addresses.toArray();
-    }
+
+//    /**
+//     * 封装号码到 Address
+//     * @param numbers phone
+//     * @return Address
+//     */
+//    @Deprecated
+//    private Address[] prepareAddress(String[] numbers) {
+//        List<Address> addresses = new ArrayList<>();
+//        for (String number : numbers) {
+//            if (checkPhone(number))
+//                addresses.add(new Address(TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, number));
+//        }
+//        return (Address[]) addresses.toArray();
+//    }
 
     public void setRunning(boolean running) {
         this.running = running;
