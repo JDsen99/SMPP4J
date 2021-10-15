@@ -100,9 +100,13 @@ public class TestSend {
     }
 
     public static void main(String[] args) {
-        TestSend multiSubmit = new TestSend();
-        SMPPSession smppSession = multiSubmit.initSession();
-        multiSubmit.sendMessage(smppSession,"18148940157","asdasd");
+//        TestSend multiSubmit = new TestSend();
+//        SMPPSession smppSession = multiSubmit.initSession();
+//        multiSubmit.sendMessage(smppSession,"18148940157","asdasd");
+
+        LOGGER.info("0");
+        LOGGER.warn("1");
+        LOGGER.error("2");
     }
 
     private void sendMessage(SMPPSession session , String number, String message) {
