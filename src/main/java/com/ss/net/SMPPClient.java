@@ -1,4 +1,4 @@
-package com.ss.smpp;
+package com.ss.net;
 
 import com.google.common.util.concurrent.RateLimiter;
 import com.ss.common.ClientConstant;
@@ -67,6 +67,8 @@ public class SMPPClient extends SMPPSession {
 
     private ClientMapper clientMapper = sqlSession.getMapper(ClientMapper.class);
 
+    private RegisteredDelivery registeredDelivery = new RegisteredDelivery(SMSCDeliveryReceipt.SUCCESS_FAILURE);
+
 
     public SMPPClient(int id) {
         super();
@@ -81,7 +83,7 @@ public class SMPPClient extends SMPPSession {
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, sendId,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, phone,
                     new ESMClass(), (byte) 0, priorityFlag, ClientConstant.TIME_FORMATTER.format(new Date()), null,
-                    new RegisteredDelivery(SMSCDeliveryReceipt.FAILURE), (byte) 0, dataCoding, (byte) 0,
+                    registeredDelivery, (byte) 0, dataCoding, (byte) 0,
                     content.getBytes());
         } catch (PDUException | ResponseTimeoutException | InvalidResponseException | NegativeResponseException | IOException e) {
             e.printStackTrace();
@@ -94,7 +96,7 @@ public class SMPPClient extends SMPPSession {
         try {
             submitMultiResult = submitMultiple(ClientConstant.SERVICE_TYPE, TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, sendId,
                     addresses, new ESMClass(), (byte) 0, (byte) 1, ClientConstant.TIME_FORMATTER.format(new Date()), null,
-                    new RegisteredDelivery(SMSCDeliveryReceipt.SUCCESS_FAILURE), ReplaceIfPresentFlag.REPLACE,
+                    registeredDelivery, ReplaceIfPresentFlag.REPLACE,
                     dataCoding, (byte) 0,
                     content.getBytes());
         } catch (PDUException | ResponseTimeoutException | InvalidResponseException | NegativeResponseException | IOException e) {
@@ -105,7 +107,7 @@ public class SMPPClient extends SMPPSession {
 
     public void doConnect() {
         try {
-            connectAndBind(serverAddr,port,new BindParameter(BindType.BIND_TX, account, password, "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
+            connectAndBind(serverAddr,port,new BindParameter(BindType.BIND_TRX, account, password, "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
         } catch (IOException e) {
             logger.warn("通道启动错误... ID : {}  {}",id,e.getMessage());
         }

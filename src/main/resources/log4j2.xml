@@ -8,7 +8,7 @@
 			<Filters>
 				<ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY" />
 			</Filters>
-			<PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss} [%t] %-5level %c - %msg%xEx%n"/>
+			<PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss} [%t] %-5level %l - %msg%xEx%n"/>
 		</Console>
 		<RollingFile name="RollingFileWarn" fileName="${LOG_HOME}/warn.log"
 					 filePattern="${LOG_HOME}/$${date:yyyy-MM}/warn-%d{yyyy-MM-dd}-%i.log">

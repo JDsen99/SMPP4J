@@ -3,20 +3,15 @@ import com.ss.common.Container;
 import com.ss.dao.ClientMapper;
 import com.ss.pojo.Message;
 import com.ss.pojo.Mobile;
-import com.ss.smpp.SMPPClient;
-import com.ss.utils.CommUtil;
+import com.ss.net.SMPPClient;
 import com.ss.utils.MybatisUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.jsmpp.bean.Address;
-import org.jsmpp.bean.BindType;
 import org.jsmpp.bean.NumberingPlanIndicator;
 import org.jsmpp.bean.TypeOfNumber;
-import org.jsmpp.session.BindParameter;
-import org.jsmpp.session.SMPPSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,10 +25,6 @@ public class Adapter implements Runnable {
 
     private volatile boolean running = true;
 
-    /**
-     * 记录是否 成功
-     */
-    private static boolean record = true;
 
     /**
      * 是否为大号码发送线程
@@ -147,11 +138,7 @@ public class Adapter implements Runnable {
             if (messages != null) {
                 if (messages.size() != 0) {
                     for (Message data : messages) {
-                        if (data.getSendCount() > 200){
-                            data.setStatus(2);
-                        }else {
-                            data.setStatus(1);
-                        }
+                        data.setStatus(1);
                         preData.add(data);
                         mapper.updateMessageStatus(data.getId(), data.getStatus());
                     }
@@ -200,11 +187,9 @@ public class Adapter implements Runnable {
      *
      * @param message 短信
      * @param client  客户端
-     * @throws ExecutionException   异常
-     * @throws InterruptedException 异常
      */
-    private void sendMessage(Message message, SMPPClient client) throws Exception {
-        logger.info("send message ... : {}" ,message);
+    private void sendMessage(Message message, SMPPClient client){
+        logger.info("send message ... : {} id {} phone {}" ,message,message.getId(),message.getPhone());
         MessageTask task = new MessageTask(message, client);
         executors.submit(task);
     }
@@ -219,6 +204,7 @@ public class Adapter implements Runnable {
      */
     private void sendMessage(Address[] address,Message message, SMPPClient client) throws Exception {
         BigMessageTask task = new BigMessageTask(address,message, client);
+        executors.submit(task);
     }
 
     /**
@@ -276,10 +262,6 @@ public class Adapter implements Runnable {
 
     public void setRunning(boolean running) {
         this.running = running;
-    }
-
-    public static void setRecord(boolean record) {
-        Adapter.record = record;
     }
 
     public boolean isLaunch() {

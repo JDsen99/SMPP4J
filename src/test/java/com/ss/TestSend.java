@@ -2,7 +2,6 @@ package com.ss;
 
 
 import com.ss.controller.MessageReceiverListenerImpl;
-import com.ss.smpp.SMPPClient;
 import org.jsmpp.InvalidResponseException;
 import org.jsmpp.PDUException;
 import org.jsmpp.bean.*;
@@ -11,7 +10,6 @@ import org.jsmpp.extra.ResponseTimeoutException;
 import org.jsmpp.session.BindParameter;
 import org.jsmpp.session.SMPPSession;
 import org.jsmpp.util.AbsoluteTimeFormatter;
-import org.jsmpp.util.DeliveryReceiptState;
 import org.jsmpp.util.TimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
