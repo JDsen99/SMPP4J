@@ -113,14 +113,16 @@ public class Adapter implements Runnable {
     private boolean checkClient(SMPPClient client) {
         if (client == null) return false;
             int times = 1;
-            if (!client.getSessionState().isTransmittable()){
-                logger.warn("通道未连接 ID : {} 正在尝试重新链接。。。重连次数 {} ",client.getId(), times);
-                try {
-                    while (times++ < 10 && !client.getSessionState().isTransmittable()){
-                        Thread.sleep(2000);
+            synchronized (client.LOCK) {
+                if (!client.getSessionState().isTransmittable()){
+                    logger.warn("通道未连接 ID : {} 正在尝试重新链接。。。重连次数 {} ",client.getId(), times);
+                    try {
+                        while (times++ < 10 && !client.getSessionState().isTransmittable()){
+                            Thread.sleep(2000);
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
             }
             return client.getSessionState().isTransmittable();
@@ -165,7 +167,7 @@ public class Adapter implements Runnable {
         sqlSession = MybatisUtils.getSqlSession();
         ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
 
-        logger.info("读取数据库 mobileInfo。。。threadName : {}", Thread.currentThread().getName());
+        logger.info("读取数据库 mobileInfo  id : {}。。。", taskId);
 
         List<Mobile> mobiles = mapper.listMobile(taskId);
         if (mobiles != null) {
@@ -180,13 +182,6 @@ public class Adapter implements Runnable {
         return mobiles;
     }
 
-    private void updateMessage(Integer id, Integer status) {
-        sqlSession = MybatisUtils.getSqlSession();
-        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
-        mapper.updateMessageStatus(id, status);
-        sqlSession.close();
-    }
-
     /**
      * 发送短信
      *
@@ -198,6 +193,17 @@ public class Adapter implements Runnable {
 //        logger.info("send message ... : {} id {} phone {}" ,message,message.getId(),message.getPhone());
         MessageTask task = new MessageTask(message, client);
         executors.submit(task);
+    }
+
+    private void updateMessage(Integer id, Integer status) {
+        if (status == 2) {
+            logger.info("一条记录已完成 。。。 ID : {}", id);
+        }
+
+        sqlSession = MybatisUtils.getSqlSession();
+        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
+        mapper.updateMessageStatus(id, status);
+        sqlSession.close();
     }
 
     /**

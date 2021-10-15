@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SMPPClient extends SMPPSession {
 
+    public final Object LOCK = new Object();
+
     private final static Logger logger = LoggerFactory.getLogger(BootStrap.class);
 
     private int id;
