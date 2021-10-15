@@ -5,6 +5,7 @@ import com.ss.common.Container;
 import com.ss.controller.MessageReceiverListenerImpl;
 import com.ss.dao.ClientMapper;
 import com.ss.monitor.Adapter;
+import com.ss.monitor.CommandTask;
 import com.ss.pojo.Client;
 import com.ss.net.SMPPClient;
 import com.ss.utils.MybatisUtils;
@@ -40,12 +41,7 @@ public class BootStrap {
      */
     private static Integer MAX_ACTIVE_GATEWAY_NUM;
 
-    /**
-     * 熔断标识
-     */
-    private boolean fusing = false;
 
-    private Adapter[] adapters = new Adapter[3];
 
     /**
      * 线程池
@@ -73,71 +69,34 @@ public class BootStrap {
         Container.getInstance().setBootStrap(bootStrap);
         boolean flag = true;
         System.out.println(" s: 启动 , e: 退出 , r 重启通道 , l 查看已存通道状态 \n 请输入：");
+
         while (flag) {
             String command = scanner.nextLine();
             switch (command) {
                 case "s":
                     bootStrap.init();
                     bootStrap.start();
-                    break;
-                case "e":
                     flag = false;
-                    bootStrap.close();
-                    break;
-                case "r":
-                    System.out.println("请输入通道ID 进行重启");
-                    int id = 0;
-                    try {
-                        id = scanner.nextInt();
-                    } catch (Exception e) {
-                        logger.warn("无效输入。。。{}", command);
-                    }
-                    if (id != 0) {
-                        reStartGateWay(id);
-                    }
-                    break;
-                case "l":
-                    bootStrap.showGateWayStatus();
                     break;
                 default:
                     logger.warn("无效输入。。。{}", command);
                     break;
             }
         }
-        logger.info("scanner 已退出。。。主线程睡眠。。。请 X ");
 
-        try {
-            Thread.sleep(Integer.MAX_VALUE);
-        } catch (InterruptedException e) {
-        }
-    }
+        flag = true;
 
-    private void showGateWayStatus() {
-        container.showGateWayStatus();
-    }
-
-    private static void reStartGateWay(int id) {
-        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
-        Client client = mapper.getClientById(id);
-        if (client != null) {
-            if (client.getStatus() == 1) {
-                SMPPClient smppClient = packageClient(client);
-                smppClient.doConnect();
-                Container.getInstance().addClient(client.getId(), smppClient);
+        while (flag) {
+            try {
+                Thread.sleep(1000);
+                bootStrap.container.checkClientStatus();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        } else {
-            logger.warn("该通道不存在。。。id {}", id);
         }
+        logger.info("scanner 已退出。。。主线程睡眠。。。请 X ");
     }
 
-    private void close() {
-        logger.info("线程开始关闭 。。。");
-        for (Adapter adapter : adapters) {
-            adapter.setRunning(false);
-        }
-        executors.shutdown();
-        logger.info("等待所有的状态报告中 。。。请自行关闭");
-    }
 
     /**
      * 初始化通道
@@ -159,7 +118,9 @@ public class BootStrap {
      */
     private void start() {
         //启动客户端
-        container.clientStart();
+//        container.clientStart();
+
+        Adapter[] adapters = new Adapter[3];
 //        //启动线程
         logger.info("测试。。。。。。。。。 短信发送线程启动。。。启动数量 3 大号码发生线程 2 ");
         Adapter a1 = new Adapter();
@@ -176,6 +137,9 @@ public class BootStrap {
         executors.execute(a1);
         executors.execute(a2);
         executors.execute(a3);
+
+        CommandTask commandTask = new CommandTask(adapters);
+        executors.execute(commandTask);
     }
 
     /**
@@ -203,14 +167,4 @@ public class BootStrap {
         smppClient.setMessageReceiverListener(new MessageReceiverListenerImpl());
         return smppClient;
     }
-
-    /**
-     * 关闭发送线程
-     */
-    public void closeAdapter() {
-        for (Adapter adapter : adapters) {
-            adapter.setRunning(false);
-        }
-    }
-
 }

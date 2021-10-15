@@ -68,6 +68,23 @@ public class Container {
         }
     }
 
+    public void checkClientStatus() {
+        Collection<SMPPClient> values = clientMap.values();
+        for (SMPPClient value : values) {
+            if (!value.getSessionState().isTransmittable()) {
+                LOGGER.info("检测到通道未连接 正在连接。。。ID : {}",value.getId());
+                value.doConnect();
+                if (!value.getSessionState().isTransmittable()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
     private enum ContainerHolder {
         /**
          * 存储数据容器的枚举对象

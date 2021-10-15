@@ -21,6 +21,7 @@ public class CommUtil {
      */
     public static DataCoding getSmppCharsetInfo(String content) {
         DataCoding ret = new GeneralDataCoding(Alphabet.ALPHA_UCS2, MessageClass.CLASS2, false);
+//        DataCoding ret = new GeneralDataCoding(Alphabet.ALPHA_UCS2, MessageClass.CLASS1, false);
         if (CommUtil.checkLatinCharset(content)) {
             ret = new GeneralDataCoding(Alphabet.ALPHA_DEFAULT, MessageClass.CLASS1, false);
         }

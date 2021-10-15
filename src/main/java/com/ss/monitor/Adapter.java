@@ -47,7 +47,7 @@ public class Adapter implements Runnable {
     @Override
     public void run() {
 
-        int times = 1;
+        int times = 0;
         while (running) {
             getMessageFromDatabase();
             if (preData.size() <= 0) {
@@ -112,20 +112,18 @@ public class Adapter implements Runnable {
      */
     private boolean checkClient(SMPPClient client) {
         if (client == null) return false;
-        synchronized (client) {
-            int times = 0;
-            while (times++ < 10 && !client.getSessionState().isTransmittable()) {
+            int times = 1;
+            if (!client.getSessionState().isTransmittable()){
+                logger.warn("通道未连接 ID : {} 正在尝试重新链接。。。重连次数 {} ",client.getId(), times);
                 try {
-                    logger.warn("通道未连接 正在尝试重新链接。。重连次数 {}", times);
-                    System.out.println(client);
-                    client.doConnect();
-                    Thread.sleep(3000);
+                    while (times++ < 10 && !client.getSessionState().isTransmittable()){
+                        Thread.sleep(2000);
+                    }
                 } catch (InterruptedException e) {
-                    throw new RuntimeException();
+                    e.printStackTrace();
                 }
             }
             return client.getSessionState().isTransmittable();
-        }
     }
 
     /**
@@ -196,12 +194,10 @@ public class Adapter implements Runnable {
      * @param client  客户端
      */
     private void sendMessage(Message message, SMPPClient client){
-        synchronized (client) {
-            client.getLimiter().acquire();
+        client.getLimiter().acquire();
 //        logger.info("send message ... : {} id {} phone {}" ,message,message.getId(),message.getPhone());
-            MessageTask task = new MessageTask(message, client);
-            executors.submit(task);
-        }
+        MessageTask task = new MessageTask(message, client);
+        executors.submit(task);
     }
 
     /**

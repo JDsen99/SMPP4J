@@ -77,7 +77,7 @@ public class SMPPClient extends SMPPSession {
     }
 
 
-    public String submitShortMessage(String sendId, String phone, byte priorityFlag, DataCoding dataCoding, String content) {
+    public synchronized String submitShortMessage(String sendId, String phone, byte priorityFlag, DataCoding dataCoding, String content) {
         sendCount.getAndIncrement();
         SubmitSmResult result = null;
         try {
