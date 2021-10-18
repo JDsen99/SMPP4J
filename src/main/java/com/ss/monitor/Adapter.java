@@ -187,6 +187,13 @@ public class Adapter implements Runnable {
      * @param client  客户端
      */
     private void sendMessage(Message message, SMPPClient client){
+        if (!client.getSessionState().isTransmittable()){
+            client.doConnect();
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ignored) {
+            }
+        }
         client.getLimiter().acquire();
 //        logger.info("send message ... : {} id {} phone {}" ,message,message.getId(),message.getPhone());
         MessageTask task = new MessageTask(message, client);

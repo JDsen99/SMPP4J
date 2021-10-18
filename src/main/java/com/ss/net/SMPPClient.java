@@ -110,7 +110,7 @@ public class SMPPClient extends SMPPSession {
         return submitMultiResult;
     }
 
-    public void doConnect() {
+    public synchronized void doConnect() {
         try {
 //            connectAndBind(serverAddr,port,new BindParameter(BindType.BIND_TRX, account, password, "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null));
             connectAndBind(serverAddr,port,BindType.BIND_TRX, account, password.trim(), "cp", TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, null);
