@@ -105,7 +105,15 @@ public class TestSend {
 //        multiSubmit.sendMessage(smppSession,"18148940157","asdasd");
 
         LOGGER.info("0");
+        LOGGER.info("0");
+        LOGGER.info("0");
+        LOGGER.info("0");
         LOGGER.warn("1");
+        LOGGER.warn("1");
+        LOGGER.warn("1");
+        LOGGER.error("2");
+        LOGGER.error("2");
+        LOGGER.error("2");
         LOGGER.error("2");
     }
 

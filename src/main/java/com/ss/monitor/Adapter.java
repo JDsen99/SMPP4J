@@ -7,8 +7,6 @@ import com.ss.net.SMPPClient;
 import com.ss.utils.MybatisUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.jsmpp.bean.Address;
-import org.jsmpp.bean.NumberingPlanIndicator;
-import org.jsmpp.bean.TypeOfNumber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

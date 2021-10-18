@@ -1,11 +1,7 @@
 package com.ss.monitor;
-
-import com.ss.dao.ClientMapper;
 import com.ss.pojo.Message;
 import com.ss.net.SMPPClient;
 import com.ss.utils.CommUtil;
-import com.ss.utils.MybatisUtils;
-import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
