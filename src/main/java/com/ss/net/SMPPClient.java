@@ -79,19 +79,14 @@ public class SMPPClient extends SMPPSession {
     }
 
 
-    public synchronized String submitShortMessage(String sendId, String phone, byte priorityFlag, DataCoding dataCoding, String content) {
+    public synchronized String submitShortMessage(String sendId, String phone, byte priorityFlag, DataCoding dataCoding, String content) throws PDUException, IOException, InvalidResponseException, NegativeResponseException, ResponseTimeoutException {
         sendCount.getAndIncrement();
-        SubmitSmResult result = null;
-        try {
-            result = submitShortMessage(ClientConstant.SERVICE_TYPE,
+        SubmitSmResult result = submitShortMessage(ClientConstant.SERVICE_TYPE,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, sendId,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, phone,
                     new ESMClass(), (byte) 0, priorityFlag, ClientConstant.TIME_FORMATTER.format(new Date()), null,
                     registeredDelivery, (byte) 0, dataCoding, (byte) 0,
                     content.getBytes());
-        } catch (PDUException | ResponseTimeoutException | InvalidResponseException | NegativeResponseException | IOException e) {
-            e.printStackTrace();
-        }
         assert result != null;
         return result.getMessageId();
     }

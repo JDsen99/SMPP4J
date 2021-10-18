@@ -6,7 +6,7 @@
 
     <groupId>com.ss</groupId>
     <artifactId>SMPP4J</artifactId>
-    <version>2021.1.0.1</version>
+    <version>2021.1.1.1</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>

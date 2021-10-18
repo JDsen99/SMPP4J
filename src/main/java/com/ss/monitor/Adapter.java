@@ -66,12 +66,14 @@ public class Adapter implements Runnable {
                         String phone = message.getPhone();
                         //判断是否为大短信
                         if (launch) {
+                            logger.info("开始发送大号码短信。。。ID : {}",message.getId());
                             List<Mobile> mobiles = getMobile(message.getId());
                             for (Mobile mobile : mobiles) {
                                 Message msg = (Message) message.clone();
                                 msg.setPhone(mobile.getPhone());
                                 sendMessage(msg,client);
                             }
+                            logger.info("大号码短信发送完成 。。。 ID : {} ",message.getId());
                             updateMessage(message.getId(), 2);
                         } else {
                             //判断是否 为多号码
@@ -196,8 +198,13 @@ public class Adapter implements Runnable {
         }
         client.getLimiter().acquire();
 //        logger.info("send message ... : {} id {} phone {}" ,message,message.getId(),message.getPhone());
-        MessageTask task = new MessageTask(message, client);
-        executors.submit(task);
+        if (client.getSessionState().isTransmittable()) {
+            MessageTask task = new MessageTask(message, client);
+            executors.submit(task);
+        }else {
+            updateMessage(message.getId(), 2);
+            logger.error("通道错误，重新链接失败。。。。clientId {} phone id : {}", client.getId(),message.getId());
+        }
     }
 
     private void updateMessage(Integer id, Integer status) {
