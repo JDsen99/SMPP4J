@@ -72,7 +72,7 @@
         update TaskInfo set bProcess=#{status},Sendtime=getdate() where ID = #{id};
     </update>
 
-    <insert id="insertMessage" parameterType="com.ss.pojo.Message">
+    <insert id="insertSendInfo" parameterType="com.ss.pojo.Message">
         insert into SendInfo(TaskID,SendMobile,MessageID,SendStatus,errorCode)
         values(#{id},#{phone},#{messageId},#{text},#{status});
     </insert>
@@ -101,9 +101,6 @@
                UserPwd as password,
                bEnabled as status
         from smppInfo where ID = #{id};
-    </select>
-    <select id="getTaskIdByMessageID" resultType="java.lang.Integer">
-        select TaskID from SendInfo where MessageID = #{messageId};
     </select>
 
 </mapper>

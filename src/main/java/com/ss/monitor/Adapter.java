@@ -7,6 +7,8 @@ import com.ss.net.SMPPClient;
 import com.ss.utils.MybatisUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.jsmpp.bean.Address;
+import org.jsmpp.bean.NumberingPlanIndicator;
+import org.jsmpp.bean.TypeOfNumber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 
-public class Adapter implements Runnable {
+public class Adapter extends AbstractMessageTask implements Runnable {
 
     private Logger logger = LoggerFactory.getLogger(Adapter.class);
 
@@ -207,16 +209,7 @@ public class Adapter implements Runnable {
         }
     }
 
-    private void updateMessage(Integer id, Integer status) {
-        if (status == 2) {
-            logger.info("一条记录已完成 。。。 ID : {}", id);
-        }
 
-        sqlSession = MybatisUtils.getSqlSession();
-        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
-        mapper.updateMessageStatus(id, status);
-        sqlSession.close();
-    }
 
     /**
      * 发送短信
@@ -233,48 +226,35 @@ public class Adapter implements Runnable {
     }
 
     /**
-     * 将数据插入数据库 taskInfo
-     *
-     * @param message message
-     * @param messageId integer
+     * 封装号码到 Address
+     * @param numbers phone
+     * @return Address
      */
-    private void insertMessage(Message message, String messageId) {
-        sqlSession = MybatisUtils.getSqlSession();
-        ClientMapper mapper = sqlSession.getMapper(ClientMapper.class);
-        message.setMessageId(messageId);
-        mapper.insertMessage(message);
-        sqlSession.close();
+    @Deprecated
+    private  Address[] prepareAddress(List<Mobile> numbers) {
+        List<Address> addresses = new ArrayList<>();
+        for (Mobile number : numbers) {
+            if (checkPhone(number.getPhone())) addresses.add(new Address(TypeOfNumber.INTERNATIONAL, NumberingPlanIndicator.UNKNOWN, number.getPhone()));
+        }
+        return addresses.toArray(new Address[0]);
     }
 
-//    /**
-//     * 封装号码到 Address
-//     * @param numbers phone
-//     * @return Address
-//     */
-//    private  Address[] prepareAddress(List<Mobile> numbers) {
-//        List<Address> addresses = new ArrayList<>();
-//        for (Mobile number : numbers) {
-//            if (checkPhone(number.getPhone())) addresses.add(new Address(TypeOfNumber.INTERNATIONAL, NumberingPlanIndicator.UNKNOWN, number.getPhone()));
-//        }
-//        return addresses.toArray(new Address[0]);
-//    }
 
 
-
-//    /**
-//     * 封装号码到 Address
-//     * @param numbers phone
-//     * @return Address
-//     */
-//    @Deprecated
-//    private Address[] prepareAddress(String[] numbers) {
-//        List<Address> addresses = new ArrayList<>();
-//        for (String number : numbers) {
-//            if (checkPhone(number))
-//                addresses.add(new Address(TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, number));
-//        }
-//        return (Address[]) addresses.toArray();
-//    }
+    /**
+     * 封装号码到 Address
+     * @param numbers phone
+     * @return Address
+     */
+    @Deprecated
+    private Address[] prepareAddress(String[] numbers) {
+        List<Address> addresses = new ArrayList<>();
+        for (String number : numbers) {
+            if (checkPhone(number))
+                addresses.add(new Address(TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, number));
+        }
+        return (Address[]) addresses.toArray();
+    }
 
     public void setRunning(boolean running) {
         this.running = running;

@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @description
  * @createDate 2021/10/12-19:00
  */
-public class SMPPClient extends SMPPSession {
+public class SMPPClient extends SMPPSession implements GateWay {
 
     public final Object LOCK = new Object();
 
@@ -72,6 +72,7 @@ public class SMPPClient extends SMPPSession {
 
     private RegisteredDelivery registeredDelivery = new RegisteredDelivery(SMSCDeliveryReceipt.SUCCESS_FAILURE);
 
+    private ESMClass esmClass = new ESMClass();
 
     public SMPPClient(int id) {
         super();
@@ -84,7 +85,7 @@ public class SMPPClient extends SMPPSession {
         SubmitSmResult result = submitShortMessage(ClientConstant.SERVICE_TYPE,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, sendId,
                     TypeOfNumber.NATIONAL, NumberingPlanIndicator.UNKNOWN, phone,
-                    new ESMClass(), (byte) 0, priorityFlag, ClientConstant.TIME_FORMATTER.format(new Date()), null,
+                    esmClass, (byte) 0, priorityFlag, ClientConstant.TIME_FORMATTER.format(new Date()), null,
                     registeredDelivery, (byte) 0, dataCoding, (byte) 0,
                     content.getBytes());
         assert result != null;

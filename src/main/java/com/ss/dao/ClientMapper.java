@@ -38,43 +38,72 @@ public interface ClientMapper {
      */
     Integer countActiveClient();
 
+    /**
+     * 查询所有未发生（bProcess = 0 && sendCount !< 200）的短信
+     * @return List<Message>
+     */
     List<Message> listUnDeliverMessage();
 
     /**
-     * 获取 mobile info 的号码
-     * @return
+     * 查询所有未发生（bProcess = 0 && sendCount > 200）的 大短信
+     * @return List<Message>
      */
     List<Message> listBigUnDeliverMessage();
 
     /**
      * 获取 mobile info 的号码
-     * @return
+     * @return List<Mobile>
      */
     List<Mobile> listMobile(@Param("taskId") int taskId);
 
     /**
      * 更新taskInfo表的状态
-     * @param id
-     * @param status
+     * @param id  id
+     * @param status status
      */
     void updateMessageStatus(@Param("id") int id,@Param("status") int status);
 
     /**
      * 更新大号码表 状态
-     * @param id
-     * @param status
+     * @param id id
+     * @param status status
      */
     void updateMobileStatus(@Param("id") int id,@Param("status") int status);
 
-    void insertMessage(Message message);
+    /**
+     * 将数据插入SendInfo
+     * @param message message对象
+     */
+    void insertSendInfo(Message message);
 
+    /**
+     * 获取指定ID 的 通道
+     * @param id id
+     * @return Client
+     */
     Client getClientById(int id);
 
+    /**
+     * 大号码未发生 回滚
+     * @param status 3
+     * @param index index
+     * @param messageId messageId
+     */
     void rollBackBigMessage(@Param("status") int status, @Param("index") String index,@Param("id") int messageId);
 
+    /**
+     * 更新SendInfo 的状态
+     * @param status  状态
+     * @param errorCode 错误码
+     * @param messageId messageId
+     */
     void updateSendInfo(@Param("status") String status,@Param("errorCode") String errorCode, @Param("messageId") String messageId);
 
+    /**
+     * TODO
+     * @param id id
+     * @param status status
+     */
     void updateBigMessageStatus(@Param("id") int id,@Param("status") int status);
 
-    int getTaskIdByMessageID(@Param("messageId") String messageId);
 }
